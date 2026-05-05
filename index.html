@@ -120,6 +120,72 @@
 
   .dot.connected { background: #4ade80; box-shadow: 0 0 6px rgba(74,222,128,0.5); }
   .dot.error { background: #f87171; }
+  .dot.remembered { background: #60a5fa; box-shadow: 0 0 6px rgba(96,165,250,0.5); }
+
+  .remember-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 10px;
+  }
+
+  .remember-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+  }
+
+  .remember-left input[type="checkbox"] {
+    width: 14px;
+    height: 14px;
+    accent-color: var(--orange);
+    cursor: pointer;
+  }
+
+  .remember-label {
+    font-size: 12px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .saved-badge {
+    display: none;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+    font-family: var(--font-mono);
+    color: #60a5fa;
+    background: rgba(96,165,250,0.08);
+    border: 0.5px solid rgba(96,165,250,0.2);
+    border-radius: 20px;
+    padding: 3px 9px;
+  }
+
+  .saved-badge.visible { display: flex; }
+
+  .saved-badge-dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: #60a5fa;
+  }
+
+  .forget-btn {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-muted);
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    transition: color 0.15s;
+  }
+
+  .forget-btn:hover { color: #f87171; }
 
   /* Key section */
   .key-section {
@@ -464,6 +530,19 @@
       <input class="key-input" type="password" id="api-key" placeholder="Paste your Hive API key..." />
       <button class="connect-btn" onclick="handleConnect()">Connect</button>
     </div>
+    <div class="remember-row">
+      <label class="remember-left">
+        <input type="checkbox" id="remember-checkbox" />
+        <span class="remember-label">Remember on this device</span>
+      </label>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div class="saved-badge" id="saved-badge">
+          <div class="saved-badge-dot"></div>
+          key saved
+        </div>
+        <button class="forget-btn" id="forget-btn" style="display:none" onclick="forgetKey()">forget</button>
+      </div>
+    </div>
   </div>
 
   <div class="qa-label">Quick actions</div>
@@ -519,6 +598,7 @@
   let history = [];
 
   const HIVE_MCP = 'https://hive-mind.hive.com/mcp';
+  const STORAGE_KEY = 'hive_command_api_key';
 
   const SYSTEM = `You are an expert Hive project management assistant with full administrative access to the user's Hive workspace via the Hive MCP server.
 
@@ -537,16 +617,70 @@ Guidelines:
 - For complex queries, break down results clearly with headers or sections.
 - If an operation would make irreversible changes (e.g. archiving many projects), briefly confirm scope before executing.`;
 
+  function setConnectedState(key, remembered) {
+    apiKey = key;
+    connected = true;
+    document.getElementById('send-btn').disabled = false;
+    if (remembered) {
+      document.getElementById('dot').className = 'dot remembered';
+      document.getElementById('status-text').textContent = 'connected · saved';
+    } else {
+      document.getElementById('dot').className = 'dot connected';
+      document.getElementById('status-text').textContent = 'connected';
+    }
+  }
+
+  function showSavedBadge() {
+    document.getElementById('saved-badge').classList.add('visible');
+    document.getElementById('forget-btn').style.display = 'block';
+  }
+
+  function hideSavedBadge() {
+    document.getElementById('saved-badge').classList.remove('visible');
+    document.getElementById('forget-btn').style.display = 'none';
+  }
+
   function handleConnect() {
     const val = document.getElementById('api-key').value.trim();
     if (!val) return;
-    apiKey = val;
-    connected = true;
-    document.getElementById('dot').className = 'dot connected';
-    document.getElementById('status-text').textContent = 'connected';
-    document.getElementById('send-btn').disabled = false;
+    const remember = document.getElementById('remember-checkbox').checked;
+
+    if (remember) {
+      localStorage.setItem(STORAGE_KEY, val);
+      showSavedBadge();
+      setConnectedState(val, true);
+    } else {
+      localStorage.removeItem(STORAGE_KEY);
+      hideSavedBadge();
+      setConnectedState(val, false);
+    }
+
     addMsg('assistant', 'Connected to your Hive workspace. What would you like to know or do?');
   }
+
+  function forgetKey() {
+    localStorage.removeItem(STORAGE_KEY);
+    document.getElementById('api-key').value = '';
+    document.getElementById('remember-checkbox').checked = false;
+    hideSavedBadge();
+    apiKey = '';
+    connected = false;
+    document.getElementById('dot').className = 'dot';
+    document.getElementById('status-text').textContent = 'disconnected';
+    document.getElementById('send-btn').disabled = true;
+    addMsg('assistant', 'Saved key removed. Paste your API key and click Connect to reconnect.');
+  }
+
+  window.addEventListener('DOMContentLoaded', () => {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      document.getElementById('api-key').value = saved;
+      document.getElementById('remember-checkbox').checked = true;
+      showSavedBadge();
+      setConnectedState(saved, true);
+      addMsg('assistant', 'Welcome back — reconnected using your saved API key. What would you like to do?');
+    }
+  });
 
   function autoResize(el) {
     el.style.height = 'auto';
