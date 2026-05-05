@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hive Command</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --orange: #F4A261;
+    --orange-dark: #E08C4A;
+    --bg: #0F0F0E;
+    --bg-surface: #1A1A18;
+    --bg-raised: #222220;
+    --border: rgba(255,255,255,0.08);
+    --border-hover: rgba(244,162,97,0.4);
+    --text-primary: #F0EDE8;
+    --text-secondary: #8A8880;
+    --text-muted: #555450;
+    --font-display: 'Syne', sans-serif;
+    --font-mono: 'DM Mono', monospace;
+  }
+
+  html, body {
+    height: 100%;
+    background: var(--bg);
+    color: var(--text-primary);
+    font-family: var(--font-display);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    min-height: 100vh;
+    padding: 0;
+  }
+
+  .app {
+    width: 100%;
+    max-width: 780px;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    padding: 0 24px 32px;
+  }
+
+  /* Header */
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 28px 0 24px;
+    border-bottom: 0.5px solid var(--border);
+    margin-bottom: 24px;
+    flex-shrink: 0;
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .logo-mark {
+    width: 36px;
+    height: 36px;
+    background: var(--orange);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .logo-mark svg { width: 20px; height: 20px; }
+
+  .logo-name {
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    color: var(--text-primary);
+  }
+
+  .logo-name span { color: var(--orange); }
+
+  .logo-sub {
+    font-size: 11px;
+    color: var(--text-muted);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-top: 1px;
+  }
+
+  .status-pill {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 12px;
+    color: var(--text-secondary);
+    background: var(--bg-surface);
+    border: 0.5px solid var(--border);
+    border-radius: 20px;
+    padding: 5px 12px;
+    font-family: var(--font-mono);
+  }
+
+  .dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--text-muted);
+    transition: background 0.3s;
+  }
+
+  .dot.connected { background: #4ade80; box-shadow: 0 0 6px rgba(74,222,128,0.5); }
+  .dot.error { background: #f87171; }
+
+  /* Key section */
+  .key-section {
+    background: var(--bg-surface);
+    border: 0.5px solid var(--border);
+    border-radius: 14px;
+    padding: 16px 18px;
+    margin-bottom: 20px;
+    flex-shrink: 0;
+  }
+
+  .key-label {
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 10px;
+  }
+
+  .key-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .key-input {
+    flex: 1;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    background: var(--bg-raised);
+    border: 0.5px solid var(--border);
+    border-radius: 8px;
+    padding: 9px 12px;
+    color: var(--text-primary);
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .key-input::placeholder { color: var(--text-muted); }
+  .key-input:focus { border-color: var(--orange); }
+
+  .connect-btn {
+    font-family: var(--font-display);
+    font-size: 13px;
+    font-weight: 600;
+    padding: 9px 18px;
+    background: var(--orange);
+    color: #0F0F0E;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.15s, transform 0.1s;
+  }
+
+  .connect-btn:hover { background: var(--orange-dark); }
+  .connect-btn:active { transform: scale(0.97); }
+
+  /* Quick actions */
+  .qa-label {
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 10px;
+  }
+
+  .quick-actions {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 8px;
+    margin-bottom: 20px;
+    flex-shrink: 0;
+  }
+
+  .qa-btn {
+    font-family: var(--font-display);
+    font-size: 12px;
+    font-weight: 400;
+    padding: 10px 12px;
+    background: var(--bg-surface);
+    border: 0.5px solid var(--border);
+    border-radius: 10px;
+    cursor: pointer;
+    text-align: left;
+    color: var(--text-secondary);
+    line-height: 1.4;
+    transition: border-color 0.15s, color 0.15s, background 0.15s;
+  }
+
+  .qa-btn:hover {
+    border-color: var(--border-hover);
+    color: var(--text-primary);
+    background: var(--bg-raised);
+  }
+
+  .qa-icon {
+    display: block;
+    font-size: 15px;
+    margin-bottom: 5px;
+  }
+
+  /* Messages */
+  .messages-wrap {
+    flex: 1;
+    overflow-y: auto;
+    margin-bottom: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 4px 0;
+    min-height: 0;
+  }
+
+  .messages-wrap::-webkit-scrollbar { width: 4px; }
+  .messages-wrap::-webkit-scrollbar-track { background: transparent; }
+  .messages-wrap::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  .msg {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    animation: fadeUp 0.2s ease;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .msg.user { flex-direction: row-reverse; }
+
+  .avatar {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 600;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  .msg.user .avatar {
+    background: var(--orange);
+    color: #0F0F0E;
+  }
+
+  .msg.assistant .avatar {
+    background: var(--bg-raised);
+    color: var(--text-secondary);
+    border: 0.5px solid var(--border);
+    font-size: 14px;
+  }
+
+  .bubble {
+    max-width: 76%;
+    padding: 11px 14px;
+    border-radius: 14px;
+    font-size: 14px;
+    line-height: 1.65;
+  }
+
+  .msg.user .bubble {
+    background: var(--orange);
+    color: #0F0F0E;
+    border-bottom-right-radius: 4px;
+    font-weight: 500;
+  }
+
+  .msg.assistant .bubble {
+    background: var(--bg-surface);
+    border: 0.5px solid var(--border);
+    color: var(--text-primary);
+    border-bottom-left-radius: 4px;
+  }
+
+  .bubble pre {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    background: var(--bg);
+    border: 0.5px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin-top: 10px;
+    overflow-x: auto;
+    white-space: pre-wrap;
+    color: var(--text-primary);
+  }
+
+  .bubble table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    margin-top: 10px;
+  }
+
+  .bubble th {
+    text-align: left;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    padding: 4px 8px 8px 0;
+    border-bottom: 0.5px solid var(--border);
+  }
+
+  .bubble td {
+    padding: 7px 8px 7px 0;
+    border-bottom: 0.5px solid var(--border);
+    color: var(--text-secondary);
+    vertical-align: top;
+  }
+
+  .bubble td:first-child { color: var(--text-primary); }
+
+  /* Typing */
+  .typing-dots {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+    padding: 4px 0;
+  }
+
+  .typing-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--text-muted);
+    animation: pulse 1.2s infinite;
+  }
+
+  .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+  .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+  @keyframes pulse {
+    0%, 80%, 100% { transform: translateY(0); opacity: 0.3; }
+    40% { transform: translateY(-5px); opacity: 1; }
+  }
+
+  /* Input row */
+  .input-area {
+    flex-shrink: 0;
+  }
+
+  .error-bar {
+    font-size: 13px;
+    color: #f87171;
+    background: rgba(248,113,113,0.08);
+    border: 0.5px solid rgba(248,113,113,0.2);
+    border-radius: 8px;
+    padding: 8px 12px;
+    margin-bottom: 10px;
+    display: none;
+    font-family: var(--font-mono);
+  }
+
+  .input-row {
+    display: flex;
+    gap: 8px;
+    align-items: flex-end;
+  }
+
+  .chat-input {
+    flex: 1;
+    font-family: var(--font-display);
+    font-size: 14px;
+    background: var(--bg-surface);
+    border: 0.5px solid var(--border);
+    border-radius: 12px;
+    padding: 11px 15px;
+    color: var(--text-primary);
+    outline: none;
+    resize: none;
+    min-height: 46px;
+    max-height: 130px;
+    transition: border-color 0.2s;
+    line-height: 1.5;
+  }
+
+  .chat-input::placeholder { color: var(--text-muted); }
+  .chat-input:focus { border-color: rgba(244,162,97,0.5); }
+
+  .send-btn {
+    width: 46px;
+    height: 46px;
+    background: var(--orange);
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: background 0.15s, transform 0.1s;
+  }
+
+  .send-btn:hover { background: var(--orange-dark); }
+  .send-btn:active { transform: scale(0.95); }
+  .send-btn:disabled { opacity: 0.35; cursor: default; }
+  .send-btn svg { width: 17px; height: 17px; }
+
+  .hint {
+    font-size: 11px;
+    color: var(--text-muted);
+    text-align: center;
+    margin-top: 10px;
+    font-family: var(--font-mono);
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header class="header">
+    <div class="logo">
+      <div class="logo-mark">
+        <svg viewBox="0 0 20 20" fill="none">
+          <path d="M10 2L17 6V14L10 18L3 14V6L10 2Z" fill="white" opacity="0.85"/>
+          <path d="M10 6.5L13.5 8.5V12.5L10 14.5L6.5 12.5V8.5L10 6.5Z" fill="#F4A261"/>
+        </svg>
+      </div>
+      <div>
+        <div class="logo-name">Hive <span>Command</span></div>
+        <div class="logo-sub">Workspace Intelligence</div>
+      </div>
+    </div>
+    <div class="status-pill">
+      <div class="dot" id="dot"></div>
+      <span id="status-text">disconnected</span>
+    </div>
+  </header>
+
+  <div class="key-section">
+    <div class="key-label">Hive API Key</div>
+    <div class="key-row">
+      <input class="key-input" type="password" id="api-key" placeholder="Paste your Hive API key..." />
+      <button class="connect-btn" onclick="handleConnect()">Connect</button>
+    </div>
+  </div>
+
+  <div class="qa-label">Quick actions</div>
+  <div class="quick-actions">
+    <button class="qa-btn" onclick="sendQuick('Show me all open actions across all projects grouped by assignee')">
+      <span class="qa-icon">📋</span>Open actions by assignee
+    </button>
+    <button class="qa-btn" onclick="sendQuick('List all active projects with their completion percentage and due dates')">
+      <span class="qa-icon">📁</span>Active projects & progress
+    </button>
+    <button class="qa-btn" onclick="sendQuick('What actions are overdue across the entire workspace? Group by project and priority.')">
+      <span class="qa-icon">⚠️</span>Overdue actions report
+    </button>
+    <button class="qa-btn" onclick="sendQuick('List all projects that have had no activity in the last 2 years — candidates for archiving')">
+      <span class="qa-icon">🗂️</span>Archive candidates
+    </button>
+    <button class="qa-btn" onclick="sendQuick('Give me a workload summary — how many open actions does each team member have right now?')">
+      <span class="qa-icon">👥</span>Team workload summary
+    </button>
+    <button class="qa-btn" onclick="sendQuick('Show me all actions completed this month across all projects with completion dates')">
+      <span class="qa-icon">✅</span>Completed this month
+    </button>
+  </div>
+
+  <div class="messages-wrap" id="messages">
+    <div class="msg assistant">
+      <div class="avatar">⬡</div>
+      <div class="bubble">
+        Enter your Hive API key above and click <strong>Connect</strong> to link your workspace. Once connected, ask anything — analytics, task management, project status, bulk admin operations, and more.
+      </div>
+    </div>
+  </div>
+
+  <div class="input-area">
+    <div class="error-bar" id="error-bar"></div>
+    <div class="input-row">
+      <textarea class="chat-input" id="chat-input" placeholder="Ask anything about your Hive workspace..." rows="1"
+        onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+      <button class="send-btn" id="send-btn" onclick="handleSend()" disabled>
+        <svg viewBox="0 0 17 17" fill="none">
+          <path d="M15 8.5L2 2.5l2.8 6-2.8 6 13-6z" fill="white"/>
+        </svg>
+      </button>
+    </div>
+    <div class="hint">shift+enter for new line &nbsp;·&nbsp; powered by Claude + Hive MCP</div>
+  </div>
+
+</div>
+
+<script>
+  let apiKey = '';
+  let connected = false;
+  let history = [];
+
+  const HIVE_MCP = 'https://hive-mind.hive.com/mcp';
+
+  const SYSTEM = `You are an expert Hive project management assistant with full administrative access to the user's Hive workspace via the Hive MCP server.
+
+You have complete access to perform ANY operation including:
+- Reading, creating, and updating actions (tasks), projects, workspaces
+- Managing user assignments, priorities, due dates, statuses
+- Running analytics and reporting (completion rates, time tracking, workload distribution, velocity)
+- Admin operations: archiving projects, bulk updates, workspace configuration
+- Dashboard and progress tracking across the entire workspace
+
+Guidelines:
+- The user is a PMO professional. Be direct, precise, and structured in your responses.
+- When answering analytical questions, provide specific data in a clear format — use tables or structured lists where appropriate.
+- When performing admin actions, briefly confirm what you did.
+- Always use the available Hive MCP tools to fetch real data. Never fabricate or estimate.
+- For complex queries, break down results clearly with headers or sections.
+- If an operation would make irreversible changes (e.g. archiving many projects), briefly confirm scope before executing.`;
+
+  function handleConnect() {
+    const val = document.getElementById('api-key').value.trim();
+    if (!val) return;
+    apiKey = val;
+    connected = true;
+    document.getElementById('dot').className = 'dot connected';
+    document.getElementById('status-text').textContent = 'connected';
+    document.getElementById('send-btn').disabled = false;
+    addMsg('assistant', 'Connected to your Hive workspace. What would you like to know or do?');
+  }
+
+  function autoResize(el) {
+    el.style.height = 'auto';
+    el.style.height = Math.min(el.scrollHeight, 130) + 'px';
+  }
+
+  function handleKey(e) {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); }
+  }
+
+  function sendQuick(text) {
+    if (!connected) { showError('Connect your Hive API key first.'); return; }
+    document.getElementById('chat-input').value = text;
+    handleSend();
+  }
+
+  async function handleSend() {
+    if (!connected) { showError('Connect your Hive API key first.'); return; }
+    const input = document.getElementById('chat-input');
+    const text = input.value.trim();
+    if (!text) return;
+
+    hideError();
+    input.value = '';
+    input.style.height = 'auto';
+    document.getElementById('send-btn').disabled = true;
+
+    addMsg('user', text);
+    history.push({ role: 'user', content: text });
+
+    const typingId = addTyping();
+
+    try {
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 1000,
+          system: SYSTEM,
+          messages: history,
+          mcp_servers: [{
+            type: 'url',
+            url: `${HIVE_MCP}?api_key=${apiKey}`,
+            name: 'hive'
+          }]
+        })
+      });
+
+      removeTyping(typingId);
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error?.message || `API error ${res.status}`);
+      }
+
+      const data = await res.json();
+      const reply = data.content
+        .filter(b => b.type === 'text')
+        .map(b => b.text)
+        .join('\n') || data.content
+        .filter(b => b.type === 'mcp_tool_result')
+        .map(b => b.content?.[0]?.text || '')
+        .join('\n') || 'Done.';
+
+      addMsg('assistant', reply);
+      history.push({ role: 'assistant', content: reply });
+
+    } catch (err) {
+      removeTyping(typingId);
+      document.getElementById('dot').className = 'dot error';
+      document.getElementById('status-text').textContent = 'error';
+      showError(err.message || 'Request failed. Check your API key and try again.');
+    }
+
+    document.getElementById('send-btn').disabled = false;
+  }
+
+  function addMsg(role, text) {
+    const wrap = document.getElementById('messages');
+    const div = document.createElement('div');
+    div.className = 'msg ' + role;
+
+    const av = document.createElement('div');
+    av.className = 'avatar';
+    av.textContent = role === 'user' ? 'You' : '⬡';
+
+    const bub = document.createElement('div');
+    bub.className = 'bubble';
+    bub.innerHTML = formatText(text);
+
+    div.appendChild(av);
+    div.appendChild(bub);
+    wrap.appendChild(div);
+    wrap.scrollTop = wrap.scrollHeight;
+  }
+
+  function formatText(text) {
+    return text
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      .replace(/`([^`]+)`/g, '<code style="font-family:var(--font-mono);font-size:12px;background:rgba(255,255,255,0.06);padding:1px 5px;border-radius:4px;">$1</code>')
+      .replace(/\n/g, '<br>');
+  }
+
+  function addTyping() {
+    const wrap = document.getElementById('messages');
+    const div = document.createElement('div');
+    div.className = 'msg assistant';
+    const id = 'typing-' + Date.now();
+    div.id = id;
+
+    const av = document.createElement('div');
+    av.className = 'avatar';
+    av.textContent = '⬡';
+
+    const bub = document.createElement('div');
+    bub.className = 'bubble';
+    bub.innerHTML = '<div class="typing-dots"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div>';
+
+    div.appendChild(av);
+    div.appendChild(bub);
+    wrap.appendChild(div);
+    wrap.scrollTop = wrap.scrollHeight;
+    return id;
+  }
+
+  function removeTyping(id) {
+    const el = document.getElementById(id);
+    if (el) el.remove();
+  }
+
+  function showError(msg) {
+    const bar = document.getElementById('error-bar');
+    bar.textContent = msg;
+    bar.style.display = 'block';
+  }
+
+  function hideError() {
+    document.getElementById('error-bar').style.display = 'none';
+  }
+</script>
+</body>
+</html>
