@@ -41,8 +41,8 @@
   .mode-btn { position: relative; font-family: var(--font-mono); font-size: 11px; padding: 3px 10px; border-radius: 14px; border: none; cursor: pointer; background: transparent; color: var(--text-muted); transition: background 0.15s, color 0.15s; white-space: nowrap; }
   .mode-btn.active { background: var(--orange); color: #0F0F0E; font-weight: 600; }
   .mode-btn:not(.active):hover { color: var(--text-secondary); }
-  .mode-tooltip { position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%); background: var(--bg-raised); border: 0.5px solid var(--border); border-radius: 7px; padding: 5px 9px; font-size: 11px; color: var(--text-secondary); white-space: nowrap; pointer-events: none; opacity: 0; transition: opacity 0.15s; z-index: 200; font-family: var(--font-display); }
-  .mode-tooltip::after { content: ''; position: absolute; top: 100%; left: 50%; transform: translateX(-50%); border: 4px solid transparent; border-top-color: var(--border); }
+  .mode-tooltip { position: absolute; top: calc(100% + 8px); left: 50%; transform: translateX(-50%); background: var(--bg-raised); border: 0.5px solid var(--border); border-radius: 7px; padding: 5px 9px; font-size: 11px; color: var(--text-secondary); white-space: nowrap; pointer-events: none; opacity: 0; transition: opacity 0.15s; z-index: 200; font-family: var(--font-display); }
+  .mode-tooltip::after { content: ''; position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); border: 4px solid transparent; border-bottom-color: var(--border); }
   .mode-btn:hover .mode-tooltip { opacity: 1; }
 
   .key-drawer { position: fixed; top: var(--header-h); left: 0; right: 0; background: var(--bg-surface); border-bottom: 0.5px solid var(--border); padding: 14px 20px; z-index: 99; transform: translateY(-110%); opacity: 0; transition: transform 0.22s ease, opacity 0.22s ease; pointer-events: none; }
