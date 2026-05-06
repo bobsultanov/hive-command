@@ -249,7 +249,7 @@
     try {
       const res = await fetch('/api/chat', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 1000, system: SYSTEM, messages: history, mcp_servers: [{ type: 'url', url: `${HIVE_MCP}?api_key=${apiKey}`, name: 'hive' }] })
+        body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 1000, system: SYSTEM, messages: history, mcp_servers: [{ type: 'url', url: `${HIVE_MCP}?api_key=${apiKey}`, name: 'hive' }] })
       });
       removeTyping(typingId);
       if (!res.ok) { const err = await res.json(); throw new Error(err.error?.message || `API error ${res.status}`); }
