@@ -38,6 +38,7 @@ export default async function handler(req, res) {
   try {
     const body = req.body;
     body.system = SYSTEM;
+    body.model = 'claude-haiku-4-5-20251001';
 
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
