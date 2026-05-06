@@ -37,6 +37,14 @@
   .key-toggle-arrow { font-size: 9px; transition: transform 0.2s; display: inline-block; }
   .key-toggle-arrow.open { transform: rotate(180deg); }
 
+  .mode-toggle { display: flex; align-items: center; background: var(--bg-surface); border: 0.5px solid var(--border); border-radius: 20px; padding: 3px; gap: 2px; }
+  .mode-btn { position: relative; font-family: var(--font-mono); font-size: 11px; padding: 3px 10px; border-radius: 14px; border: none; cursor: pointer; background: transparent; color: var(--text-muted); transition: background 0.15s, color 0.15s; white-space: nowrap; }
+  .mode-btn.active { background: var(--orange); color: #0F0F0E; font-weight: 600; }
+  .mode-btn:not(.active):hover { color: var(--text-secondary); }
+  .mode-tooltip { position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%); background: var(--bg-raised); border: 0.5px solid var(--border); border-radius: 7px; padding: 5px 9px; font-size: 11px; color: var(--text-secondary); white-space: nowrap; pointer-events: none; opacity: 0; transition: opacity 0.15s; z-index: 200; font-family: var(--font-display); }
+  .mode-tooltip::after { content: ''; position: absolute; top: 100%; left: 50%; transform: translateX(-50%); border: 4px solid transparent; border-top-color: var(--border); }
+  .mode-btn:hover .mode-tooltip { opacity: 1; }
+
   .key-drawer { position: fixed; top: var(--header-h); left: 0; right: 0; background: var(--bg-surface); border-bottom: 0.5px solid var(--border); padding: 14px 20px; z-index: 99; transform: translateY(-110%); opacity: 0; transition: transform 0.22s ease, opacity 0.22s ease; pointer-events: none; }
   .key-drawer.open { transform: translateY(0); opacity: 1; pointer-events: all; }
   .key-row { display: flex; gap: 8px; align-items: center; margin-bottom: 10px; }
@@ -116,6 +124,16 @@
     <div class="logo-name">Hive <span>Command</span></div>
   </div>
   <div class="topbar-right">
+    <div class="mode-toggle">
+      <button class="mode-btn active" id="mode-rapid" onclick="setMode('rapid')">
+        rapid
+        <div class="mode-tooltip">Each query is independent — no conversation memory</div>
+      </button>
+      <button class="mode-btn" id="mode-smart" onclick="setMode('smart')">
+        smart
+        <div class="mode-tooltip">Claude remembers your conversation history</div>
+      </button>
+    </div>
     <div class="status-pill">
       <div class="dot" id="dot"></div>
       <span id="status-text">disconnected</span>
@@ -176,7 +194,13 @@
 </div>
 
 <script>
-  let apiKey = '', connected = false, history = [], drawerOpen = false;
+  let apiKey = '', connected = false, history = [], drawerOpen = false, mode = 'rapid';
+
+  function setMode(m) {
+    mode = m;
+    document.getElementById('mode-rapid').classList.toggle('active', m === 'rapid');
+    document.getElementById('mode-smart').classList.toggle('active', m === 'smart');
+  }
   const HIVE_MCP = 'https://hive-mind.hive.com/mcp';
   const STORAGE_KEY = 'hive_command_api_key';
   const SYSTEM = `You are an expert Hive project management assistant with full administrative access to the user's Hive workspace via the Hive MCP server. You have complete access to perform ANY operation including reading, creating, and updating actions, projects, workspaces, managing assignments, running analytics, and admin operations. Be direct and structured. Use tables or lists for data. Never fabricate data.`;
@@ -243,6 +267,7 @@
     if (!text) return;
     hideError(); input.value = ''; input.style.height = 'auto';
     document.getElementById('send-btn').disabled = true;
+    if (mode === 'rapid') history = [];
     addMsg('user', text);
     history.push({ role: 'user', content: text });
     const typingId = addTyping();
